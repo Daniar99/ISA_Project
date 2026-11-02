@@ -69,6 +69,88 @@ class AssignmentApiTest extends TestCase
         ]);
     }
 
+    public function test_create_response_contains_database_defaults(): void
+    {
+        $response = $this->postJson('/api/assignments', [
+            'title' => 'Default Values',
+            'course_code' => 'CS101',
+            'due_date' => Carbon::tomorrow()->toDateString(),
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.priority', 'medium')
+            ->assertJsonPath('data.status', 'pending');
+
+        $this->getJson('/api/assignments/'.$response->json('data.id'))
+            ->assertOk()
+            ->assertExactJson($response->json());
+    }
+
+    public function test_create_rejects_null_priority_and_status_without_saving(): void
+    {
+        $this->postJson('/api/assignments', [
+            'title' => 'Invalid Defaults',
+            'course_code' => 'CS101',
+            'due_date' => Carbon::tomorrow()->toDateString(),
+            'priority' => null,
+            'status' => null,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['priority', 'status']);
+
+        $this->assertDatabaseCount('assignments', 0);
+    }
+
+    public function test_filter_rejects_unknown_status_and_array_input(): void
+    {
+        foreach (['status=unknown', 'status[]=pending'] as $query) {
+            $this->getJson('/api/assignments?'.$query)
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('status');
+        }
+    }
+
+    public function test_description_length_is_validated_on_create_and_update(): void
+    {
+        $this->postJson('/api/assignments', [
+            'title' => 'Long Description',
+            'course_code' => 'CS101',
+            'due_date' => Carbon::tomorrow()->toDateString(),
+            'description' => str_repeat('a', 5001),
+        ])->assertUnprocessable()->assertJsonValidationErrors('description');
+
+        $assignment = Assignment::factory()->create(['title' => 'Original Title']);
+
+        $this->patchJson('/api/assignments/'.$assignment->id, [
+            'title' => 'Must Not Be Saved',
+            'description' => str_repeat('a', 5001),
+        ])->assertUnprocessable()->assertJsonValidationErrors('description');
+
+        $this->assertSame('Original Title', $assignment->fresh()->title);
+    }
+
+    public function test_invalid_update_does_not_change_the_record(): void
+    {
+        $assignment = Assignment::factory()->create(['title' => 'Original Title']);
+
+        $this->patchJson('/api/assignments/'.$assignment->id, [
+            'title' => 'Must Not Be Saved',
+            'priority' => null,
+            'status' => 'invalid',
+            'grade' => 101,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['priority', 'status', 'grade']);
+
+        $this->assertSame('Original Title', $assignment->fresh()->title);
+    }
+
+    public function test_missing_records_and_unsupported_put_follow_the_lesson_routes(): void
+    {
+        $this->patchJson('/api/assignments/99999', ['status' => 'submitted'])->assertNotFound();
+        $this->deleteJson('/api/assignments/99999')->assertNotFound();
+        $this->getJson('/api/assignments/not-a-number')->assertNotFound();
+        $this->putJson('/api/assignments/1', ['title' => 'Replacement'])->assertStatus(405);
+    }
+
     public function test_store_validation_fails_when_required_fields_missing(): void
     {
         $response = $this->postJson('/api/assignments', []);

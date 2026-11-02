@@ -1,58 +1,98 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+﻿# Campus Assignment Tracker
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A simple Laravel API project for practising assignment CRUD. The dashboard at `/`
+uses the same API you can test in Postman.
 
-## About Laravel
+The backend follows the patterns in the
+[Laravel API course](https://github.com/hezha-xoshnaw/laravel-api-course-2026-2027):
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Course concept | Project example |
+| --- | --- |
+| API routes and controllers | `routes/api.php`, `AssignmentController` |
+| Form Request validation | `StoreAssignmentRequest`, `UpdateAssignmentRequest` |
+| Resource responses | `AssignmentResource` |
+| Migrations, models, and seeders | Assignments table, `Assignment`, `AssignmentSeeder` |
+| Eloquent create and read | `create`, `refresh`, `get`, route model binding |
+| Week 4 update and delete | `update`, `delete`, explicit PATCH and DELETE routes |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Assignments have extra fields for this project. The Blade dashboard and JavaScript
+are additions to the backend lessons. This classroom example uses shared sample
+data and public routes, as in the course. Login and ownership are later topics.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## First-time setup
 
-## Learning Laravel
+Requirements: PHP 8.3 or newer, Composer, and PHP's SQLite extensions.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```sh
+composer install
+php -r "file_exists('.env') || copy('.env.example', '.env');"
+php artisan key:generate
+php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
+php artisan migrate
+php artisan db:seed
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+The example environment uses SQLite. If your existing `.env` uses MySQL, configure
+and start that database before migrating. Generate the application key only during
+initial setup. Seeding adds sample assignments; repeating it adds another set.
 
-## Contributing
+Open `http://127.0.0.1:8000`. For later sessions, run `php artisan serve` again.
+The dashboard uses online Tailwind and Google Fonts assets, so its styling needs
+internet access. The API works without NPM or a frontend build.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## API and Postman
 
-## Code of Conduct
+Send `Accept: application/json`. For POST and PATCH, also send
+`Content-Type: application/json` and select raw JSON in Postman.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Method | Path | Expected response |
+| --- | --- | --- |
+| GET | `/api/assignments` | 200, assignments ordered by due date, then ID |
+| GET | `/api/assignments?status=pending` | 200, matching assignments |
+| GET | `/api/assignments/{id}` | 200, one assignment; 404 if missing |
+| POST | `/api/assignments` | 201, created assignment; 422 for invalid input |
+| PATCH | `/api/assignments/{id}` | 200, updated assignment; 422 for invalid input |
+| DELETE | `/api/assignments/{id}` | 204, empty response body |
 
-## Security Vulnerabilities
+Use the actual ID returned by POST. PUT is not registered, matching the Week 4
+lesson. A missing or nonnumeric record ID returns 404.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Example POST (replace the date with today or a future date):
 
-## License
+```json
+{
+    "title": "Database Lab",
+    "course_code": "DB201",
+    "due_date": "2026-11-20"
+}
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- Required on creation: title (up to 255 characters), course code (up to 20), and due date.
+- Omitted priority defaults to `medium`; omitted status defaults to `pending`.
+- Supplied priority and status cannot be null or empty.
+- Priorities: `low`, `medium`, `high`.
+- Statuses: `pending`, `in_progress`, `submitted`, `graded`.
+- Description is optional, up to 5,000 characters. Grade is optional: null or a whole number from 0 to 100.
+- PATCH changes only supplied, validated fields; `{}` leaves the record unchanged.
+- Creating a new assignment requires today or a future due date. Updating permits historical dates for overdue records. Dates use the application timezone, currently UTC.
+- Course codes appear uppercase in responses.
+
+The dashboard provides creation, filtering, status/grade updates, and deletion.
+Use PATCH in Postman to edit other fields. Cancelling the grade prompt cancels
+the update. Changing to an ungraded status through the dashboard clears the grade.
+
+Import `Campus_Assignment_Tracker_API.postman_collection.json`. Run the create
+request before show, update, and delete; it saves the returned `assignment_id`.
+The collection supplies a future date automatically. Change `base_url` if your
+server uses another port.
+
+## Checks
+
+```sh
+php artisan route:list --path=api
+php artisan test
+```
+
+Practice the course sequence: POST, copy the ID, GET, PATCH, GET, DELETE, then
+GET again and expect 404. Also try invalid input and expect 422 with no data change.

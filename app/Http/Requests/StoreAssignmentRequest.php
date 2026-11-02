@@ -25,10 +25,10 @@ class StoreAssignmentRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'course_code' => ['required', 'string', 'max:20'],
-            'description' => ['nullable', 'string'],
+            'description' => ['nullable', 'string', 'max:5000'],
             'due_date' => ['required', 'date', 'after_or_equal:today'],
-            'priority' => ['nullable', 'in:low,medium,high'],
-            'status' => ['nullable', 'in:pending,in_progress,submitted,graded'],
+            'priority' => ['sometimes', 'required', 'string', 'in:low,medium,high'],
+            'status' => ['sometimes', 'required', 'string', 'in:pending,in_progress,submitted,graded'],
             'grade' => ['nullable', 'integer', 'min:0', 'max:100'],
         ];
     }

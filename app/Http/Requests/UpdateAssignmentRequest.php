@@ -25,10 +25,10 @@ class UpdateAssignmentRequest extends FormRequest
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'course_code' => ['sometimes', 'required', 'string', 'max:20'],
-            'description' => ['sometimes', 'nullable', 'string'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'due_date' => ['sometimes', 'required', 'date'],
-            'priority' => ['sometimes', 'required', 'in:low,medium,high'],
-            'status' => ['sometimes', 'required', 'in:pending,in_progress,submitted,graded'],
+            'priority' => ['sometimes', 'required', 'string', 'in:low,medium,high'],
+            'status' => ['sometimes', 'required', 'string', 'in:pending,in_progress,submitted,graded'],
             'grade' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
         ];
     }

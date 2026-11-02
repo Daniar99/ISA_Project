@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Assignment & Exam Tracker</title>
+    <title>Campus Assignment Tracker</title>
     <!-- Tailwind CSS CDN for instant styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -21,7 +21,7 @@
                 </div>
                 <div>
                     <h1 class="text-base font-bold text-white leading-tight">Campus Tracker API</h1>
-                    <p class="text-xs text-indigo-400 font-medium">Assignment & Exam Management</p>
+                    <p class="text-xs text-indigo-400 font-medium">Assignment Management</p>
                 </div>
             </div>
             <div class="flex items-center space-x-3">
@@ -83,6 +83,11 @@
 
         <div id="assignmentsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 hidden"></div>
 
+        <div id="loadError" role="alert" class="text-center py-8 text-rose-300 hidden">
+            <p>Could not load assignments. Please try again.</p>
+            <button onclick="fetchAssignments()" class="mt-3 underline">Retry</button>
+        </div>
+
         <div id="emptyState" class="text-center py-16 bg-slate-800/30 rounded-2xl border border-slate-800 hidden">
             <svg class="mx-auto w-12 h-12 text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <p class="text-base font-semibold text-slate-300">No assignments found</p>
@@ -91,36 +96,36 @@
     </main>
 
     <!-- Create Assignment Modal -->
-    <div id="modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+    <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl max-h-full overflow-y-auto">
             <div class="flex items-center justify-between pb-4 border-b border-slate-700">
-                <h3 class="text-lg font-bold text-white">New Assignment</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white">&times;</button>
+                <h3 id="modalTitle" class="text-lg font-bold text-white">New Assignment</h3>
+                <button onclick="closeModal()" aria-label="Close" class="text-slate-400 hover:text-white">&times;</button>
             </div>
 
             <!-- Error message container -->
-            <div id="formError" class="mt-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs rounded-xl hidden"></div>
+            <div id="formError" role="alert" class="mt-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs rounded-xl whitespace-pre-line hidden"></div>
 
             <form id="createForm" onsubmit="handleCreate(event)" class="mt-4 space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Title *</label>
-                    <input type="text" id="title" required placeholder="e.g. Operating Systems Lab 4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                    <label for="title" class="block text-xs font-semibold text-slate-300 mb-1">Title *</label>
+                    <input type="text" id="title" required maxlength="255" placeholder="e.g. Operating Systems Lab 4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Course Code *</label>
-                        <input type="text" id="course_code" required placeholder="e.g. CS302" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 uppercase">
+                        <label for="course_code" class="block text-xs font-semibold text-slate-300 mb-1">Course Code *</label>
+                        <input type="text" id="course_code" required maxlength="20" placeholder="e.g. CS302" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 uppercase">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Due Date *</label>
+                        <label for="due_date" class="block text-xs font-semibold text-slate-300 mb-1">Due Date *</label>
                         <input type="date" id="due_date" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Priority</label>
+                        <label for="priority" class="block text-xs font-semibold text-slate-300 mb-1">Priority</label>
                         <select id="priority" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
                             <option value="low">Low</option>
                             <option value="medium" selected>Medium</option>
@@ -128,19 +133,18 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Status</label>
+                        <label for="status" class="block text-xs font-semibold text-slate-300 mb-1">Status</label>
                         <select id="status" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
                             <option value="pending" selected>Pending</option>
                             <option value="in_progress">In Progress</option>
                             <option value="submitted">Submitted</option>
-                            <option value="graded">Graded</option>
                         </select>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Description</label>
-                    <textarea id="description" rows="3" placeholder="Brief summary of requirements..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+                    <label for="description" class="block text-xs font-semibold text-slate-300 mb-1">Description</label>
+                    <textarea id="description" rows="3" maxlength="5000" placeholder="Brief summary of requirements..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-3 border-t border-slate-700">
@@ -154,50 +158,66 @@
     <script>
         let currentFilter = '';
         let allAssignments = [];
+        let latestRequest = 0;
+        let modalTrigger = null;
 
-        // Set minimum date to today
-        document.getElementById('due_date').min = new Date().toISOString().split('T')[0];
+        // Use the same definition of today as Laravel validation.
+        document.getElementById('due_date').min = @json(now()->toDateString());
+
+        function escapeHtml(value) {
+            const element = document.createElement('span');
+            element.textContent = value ?? '';
+            return element.innerHTML;
+        }
 
         async function fetchAssignments() {
+            const requestNumber = ++latestRequest;
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('assignmentsList').classList.add('hidden');
             document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('loadError').classList.add('hidden');
 
             try {
-                const url = currentFilter ? `/api/assignments?status=${currentFilter}` : '/api/assignments';
-                const response = await fetch(url, {
+                const response = await fetch('/api/assignments', {
                     headers: { 'Accept': 'application/json' }
                 });
+                if (!response.ok) throw new Error('Could not load assignments.');
                 const result = await response.json();
-                allAssignments = result.data || [];
+                if (requestNumber !== latestRequest) return;
+                allAssignments = result.data;
                 renderAssignments();
                 updateStats();
             } catch (error) {
+                if (requestNumber !== latestRequest) return;
                 console.error("Failed to load assignments:", error);
+                document.getElementById('loadError').classList.remove('hidden');
+                ['totalCount', 'pendingCount', 'inProgressCount', 'gradedCount'].forEach(id => {
+                    document.getElementById(id).innerText = '—';
+                });
             } finally {
-                document.getElementById('loading').classList.add('hidden');
+                if (requestNumber === latestRequest) {
+                    document.getElementById('loading').classList.add('hidden');
+                }
             }
         }
 
         function updateStats() {
-            // Count from unfiltered if we have all
-            fetch('/api/assignments', { headers: { 'Accept': 'application/json' } })
-                .then(r => r.json())
-                .then(res => {
-                    const data = res.data || [];
-                    document.getElementById('totalCount').innerText = data.length;
-                    document.getElementById('pendingCount').innerText = data.filter(a => a.status === 'pending').length;
-                    document.getElementById('inProgressCount').innerText = data.filter(a => a.status === 'in_progress').length;
-                    document.getElementById('gradedCount').innerText = data.filter(a => a.status === 'graded').length;
-                });
+            document.getElementById('totalCount').innerText = allAssignments.length;
+            document.getElementById('pendingCount').innerText = allAssignments.filter(a => a.status === 'pending').length;
+            document.getElementById('inProgressCount').innerText = allAssignments.filter(a => a.status === 'in_progress').length;
+            document.getElementById('gradedCount').innerText = allAssignments.filter(a => a.status === 'graded').length;
         }
 
         function renderAssignments() {
             const container = document.getElementById('assignmentsList');
             const empty = document.getElementById('emptyState');
             container.innerHTML = '';
+            container.classList.add('hidden');
+            const assignments = currentFilter
+                ? allAssignments.filter(item => item.status === currentFilter)
+                : allAssignments;
 
-            if (allAssignments.length === 0) {
+            if (assignments.length === 0) {
                 empty.classList.remove('hidden');
                 return;
             }
@@ -218,37 +238,37 @@
                 high: 'text-rose-400 font-bold'
             };
 
-            allAssignments.forEach(item => {
+            assignments.forEach(item => {
                 const card = document.createElement('div');
                 card.className = "bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 hover:border-slate-600 transition flex flex-col justify-between";
                 card.innerHTML = `
                     <div>
                         <div class="flex items-start justify-between gap-2 mb-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">${item.course_code}</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">${escapeHtml(item.course_code)}</span>
                             <span class="text-xs font-semibold px-2 py-0.5 rounded-full border ${statusColors[item.status] || ''}">
-                                ${item.status.replace('_', ' ')}
+                                ${escapeHtml(item.status.replace('_', ' '))}
                             </span>
                         </div>
-                        <h4 class="text-base font-bold text-white mb-1.5 leading-snug">${item.title}</h4>
-                        <p class="text-xs text-slate-400 line-clamp-2 mb-4">${item.description || 'No description provided.'}</p>
+                        <h4 class="text-base font-bold text-white mb-1.5 leading-snug">${escapeHtml(item.title)}</h4>
+                        <p class="text-xs text-slate-400 line-clamp-2 mb-4">${escapeHtml(item.description || 'No description provided.')}</p>
                     </div>
 
                     <div class="pt-3 border-t border-slate-700/50 flex flex-col gap-2">
                         <div class="flex items-center justify-between text-xs text-slate-400">
-                            <span>Due: <strong class="text-slate-200">${item.due_date}</strong></span>
-                            <span>Priority: <span class="${priorityColors[item.priority]}">${item.priority.toUpperCase()}</span></span>
+                            <span>Due: <strong class="text-slate-200">${escapeHtml(item.due_date)}</strong></span>
+                            <span>Priority: <span class="${priorityColors[item.priority]}">${escapeHtml(item.priority.toUpperCase())}</span></span>
                         </div>
 
                         ${item.grade !== null ? `
                             <div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs px-2.5 py-1 rounded-lg flex items-center justify-between">
                                 <span>Grade Awarded:</span>
-                                <span class="font-bold text-sm">${item.grade}/100</span>
+                                <span class="font-bold text-sm">${escapeHtml(item.grade)}/100</span>
                             </div>
                         ` : ''}
 
                         <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-700/40">
                             <!-- Quick status change (PATCH API call) -->
-                            <select onchange="updateStatus(${item.id}, this.value)" class="text-xs bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-300 focus:outline-none">
+                            <select aria-label="Assignment status" onchange="updateStatus(${item.id}, this)" class="text-xs bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-300 focus:outline-none">
                                 <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>Pending</option>
                                 <option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
                                 <option value="submitted" ${item.status === 'submitted' ? 'selected' : ''}>Submitted</option>
@@ -274,7 +294,9 @@
             });
             const activeId = status ? `filter-${status}` : 'filter-all';
             document.getElementById(activeId).className = "filter-btn px-3 py-1 text-xs font-medium rounded-md bg-indigo-600 text-white";
-            fetchAssignments();
+            if (document.getElementById('loadError').classList.contains('hidden')) {
+                renderAssignments();
+            }
         }
 
         async function handleCreate(e) {
@@ -308,9 +330,9 @@
                     const errorData = await res.json();
                     let msg = errorData.message || 'Validation error';
                     if (errorData.errors) {
-                        msg = Object.values(errorData.errors).flat().join('<br>');
+                        msg = Object.values(errorData.errors).flat().join('\n');
                     }
-                    err.innerHTML = msg;
+                    err.textContent = msg;
                     err.classList.remove('hidden');
                     return;
                 }
@@ -327,15 +349,25 @@
             }
         }
 
-        async function updateStatus(id, newStatus) {
+        async function updateStatus(id, select) {
+            const newStatus = select.value;
+            const previousStatus = allAssignments.find(item => item.id === id).status;
             let grade = null;
             if (newStatus === 'graded') {
                 const promptGrade = prompt("Enter Grade (0-100):", "95");
-                if (promptGrade !== null) {
-                    grade = parseInt(promptGrade, 10);
+                if (promptGrade === null) {
+                    select.value = previousStatus;
+                    return;
+                }
+                grade = Number(promptGrade);
+                if (promptGrade.trim() === '' || !Number.isInteger(grade) || grade < 0 || grade > 100) {
+                    alert('Enter a whole number from 0 to 100.');
+                    select.value = previousStatus;
+                    return;
                 }
             }
 
+            select.disabled = true;
             try {
                 const res = await fetch(`/api/assignments/${id}`, {
                     method: 'PATCH',
@@ -343,16 +375,21 @@
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ status: newStatus, ...(grade !== null ? { grade } : {}) })
+                    body: JSON.stringify({ status: newStatus, grade: grade })
                 });
 
                 if (res.ok) {
                     fetchAssignments();
                 } else {
+                    select.value = previousStatus;
                     alert("Could not update assignment status.");
                 }
             } catch (err) {
+                select.value = previousStatus;
+                alert('Could not update assignment. Please try again.');
                 console.error(err);
+            } finally {
+                select.disabled = false;
             }
         }
 
@@ -371,19 +408,43 @@
                     alert("Failed to delete assignment.");
                 }
             } catch (err) {
+                alert('Could not delete assignment. Please try again.');
                 console.error(err);
             }
         }
 
         function openModal() {
+            modalTrigger = document.activeElement;
+            document.getElementById('formError').classList.add('hidden');
             document.getElementById('modal').classList.remove('hidden');
             document.getElementById('modal').classList.add('flex');
+            document.getElementById('due_date').min = @json(now()->toDateString());
+            document.getElementById('title').focus();
         }
 
         function closeModal() {
             document.getElementById('modal').classList.add('hidden');
             document.getElementById('modal').classList.remove('flex');
+            if (modalTrigger) modalTrigger.focus();
         }
+
+        document.addEventListener('keydown', event => {
+            const modal = document.getElementById('modal');
+            if (modal.classList.contains('hidden')) return;
+            if (event.key === 'Escape') closeModal();
+            if (event.key === 'Tab') {
+                const controls = modal.querySelectorAll('button:not(:disabled), input, select, textarea');
+                const first = controls[0];
+                const last = controls[controls.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            }
+        });
 
         // Initial Load
         fetchAssignments();

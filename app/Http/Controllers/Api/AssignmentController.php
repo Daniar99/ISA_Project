@@ -19,13 +19,17 @@ class AssignmentController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        $request->validate([
+            'status' => ['nullable', 'string', 'in:pending,in_progress,submitted,graded'],
+        ]);
+
         $query = Assignment::query();
 
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
         }
 
-        $assignments = $query->orderBy('due_date', 'asc')->get();
+        $assignments = $query->orderBy('due_date')->orderBy('id')->get();
 
         return AssignmentResource::collection($assignments);
     }
@@ -36,6 +40,7 @@ class AssignmentController extends Controller
     public function store(StoreAssignmentRequest $request): JsonResponse
     {
         $assignment = Assignment::create($request->validated());
+        $assignment->refresh();
 
         return (new AssignmentResource($assignment))
             ->response()
